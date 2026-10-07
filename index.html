@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How Big Is Your Gap? — The Suited Monk</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --card: #1a2332;
+    --suit: #c9a227;
+    --monk: #5ec8c0;
+    --gap: #e85d4c;
+    --text: #f2f0eb;
+    --muted: #9aa3b2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(ellipse at top, #1a2740 0%, var(--bg) 55%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+  }
+  h1 { font-size: 1.35rem; font-weight: 600; letter-spacing: 0.02em; text-align: center; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin-top: 6px; text-align: center; max-width: 440px; }
+  .stage {
+    width: min(480px, 100%);
+    margin-top: 28px;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 28px 22px 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .meter-wrap { margin-bottom: 24px; }
+  .meter-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .gap-score { font-size: 1.05rem; color: var(--gap); font-weight: 700; letter-spacing: 0; text-transform: none; }
+  .figures {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 8px; margin-bottom: 12px; min-height: 110px;
+  }
+  .figure { flex: 0 0 auto; text-align: center; }
+  .figure .icon {
+    width: 72px; height: 88px; margin: 0 auto 6px;
+    border-radius: 12px 12px 8px 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; transition: box-shadow 0.4s, filter 0.4s, opacity 0.4s;
+  }
+  .suit .icon {
+    background: linear-gradient(160deg, #2a3344, #1e2633);
+    border: 2px solid var(--suit);
+    box-shadow: 0 0 20px rgba(201,162,39,0.25);
+  }
+  .monk .icon {
+    background: linear-gradient(160deg, #1e3a3a, #152828);
+    border: 2px solid var(--monk);
+    box-shadow: 0 0 20px rgba(94,200,192,0.25);
+  }
+  .figure span.label { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .gap-visual {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    padding-bottom: 28px; min-width: 0;
+  }
+  .crack {
+    width: 100%; height: 8px; border-radius: 4px; background: #2a3344; overflow: hidden;
+  }
+  .crack-fill {
+    height: 100%; width: 50%;
+    background: linear-gradient(90deg, var(--suit), var(--gap), var(--monk));
+    border-radius: 4px;
+    transition: width 0.55s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+  .crack-label {
+    font-size: 0.65rem; color: var(--gap); margin-top: 8px; letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .flash { animation: pulse 0.5s ease; }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .q { font-size: 1.1rem; line-height: 1.45; margin-bottom: 16px; font-weight: 500; }
+  .q-meta { font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  button.choice {
+    text-align: left; padding: 14px 16px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
+    color: var(--text); font-size: 0.95rem; cursor: pointer; line-height: 1.4;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  }
+  button.choice:hover {
+    background: rgba(94,200,192,0.12); border-color: var(--monk); transform: translateY(-1px);
+  }
+  button.choice.widen:hover { background: rgba(232,93,76,0.12); border-color: var(--gap); }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .start-cta, .again {
+    width: 100%; margin-top: 8px; padding: 14px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, var(--suit), #a67c1a); color: #111;
+    font-weight: 700; font-size: 1rem; cursor: pointer;
+  }
+  .again { background: transparent; border: 1px solid var(--monk); color: var(--monk); margin-top: 12px; }
+  .result-title { font-size: 1.35rem; text-align: center; margin-bottom: 8px; }
+  .result-line { text-align: center; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  .share-card {
+    background: #121820; border-radius: 14px; padding: 18px; border: 1px dashed rgba(201,162,39,0.4);
+    text-align: center; margin-bottom: 16px;
+  }
+  .share-card p { font-size: 0.95rem; line-height: 1.5; }
+  .book-links { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .cta-book {
+    display: block; text-align: center; color: var(--suit);
+    font-size: 0.9rem; text-decoration: underline; padding: 4px 0;
+  }
+  .cta-book.lead { color: var(--monk); }
+  .feedback {
+    text-align: center; font-size: 0.85rem; color: var(--monk); min-height: 1.2em; margin-bottom: 12px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feedback.show { opacity: 1; }
+  .path {
+    height: 4px; background: #243044; border-radius: 2px; margin: 16px 0 8px;
+    overflow: hidden;
+  }
+  .path-fill {
+    height: 100%; width: 0%; background: var(--monk); transition: width 0.4s ease;
+  }
+  .hint { font-size: 0.8rem; color: var(--muted); margin-top: 14px; line-height: 1.45; }
+  .band-pill {
+    display: inline-block; padding: 4px 12px; border-radius: 999px;
+    font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 700; margin: 0 auto 12px; display: block; width: fit-content;
+  }
+  .band-pill.big { background: rgba(232,93,76,0.2); color: var(--gap); border: 1px solid var(--gap); }
+  .band-pill.mid { background: rgba(201,162,39,0.2); color: var(--suit); border: 1px solid var(--suit); }
+  .band-pill.small { background: rgba(94,200,192,0.2); color: var(--monk); border: 1px solid var(--monk); }
+  .meaning {
+    background: rgba(255,255,255,0.03); border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.06);
+  }
+  .meaning h3 {
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin-bottom: 8px; font-weight: 600;
+  }
+  .meaning p { font-size: 0.9rem; line-height: 1.55; color: var(--text); }
+  .meaning .next {
+    margin-top: 10px; font-size: 0.85rem; color: var(--monk); line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+  <h1>How Big Is Your Gap?</h1>
+  <p class="sub">Your Suit is how you show up. Your Monk is who you are. Answer 20 questions — watch the Gap and your Leadership score move in real time.</p>
+
+  <div class="stage">
+    <div class="meter-wrap">
+      <div class="meter-label">
+        <span>Your path</span>
+        <span class="gap-score">Gap: <span id="gapNum">50</span> · Lead: <span id="leadNum" style="color:var(--monk)">50</span></span>
+      </div>
+      <div class="path"><div class="path-fill" id="pathFill"></div></div>
+      <div class="figures">
+        <div class="figure suit" id="suitFig">
+          <div class="icon" id="suitIcon">👔</div>
+          <span class="label">Your Suit</span>
+        </div>
+        <div class="gap-visual">
+          <div class="crack"><div class="crack-fill" id="crack"></div></div>
+          <div class="crack-label" id="crackLabel">the Gap</div>
+        </div>
+        <div class="figure monk" id="monkFig">
+          <div class="icon" id="monkIcon">🧘</div>
+          <span class="label">Your Monk</span>
+        </div>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <div class="screen active" id="start">
+      <p class="q">Twenty questions from The Suited Monk questionnaire. Yes, No, or Sometimes — each answer shrinks or widens the Gap between your Suit and your Monk.</p>
+      <p class="hint">Based on research with Raf Adams and Dr Mike Thompson. Smaller Gap → higher Leadership. Inner peace is the goal.</p>
+      <button class="start-cta" id="begin">Start the assessment</button>
+    </div>
+
+    <div class="screen" id="play">
+      <p class="q-meta" id="qMeta"></p>
+      <p class="q" id="question"></p>
+      <div class="choices" id="choices"></div>
+    </div>
+
+    <div class="screen" id="end">
+      <span class="band-pill mid" id="bandPill">Mid Gap</span>
+      <p class="result-title" id="endTitle"></p>
+      <p class="result-line" id="endLine"></p>
+      <div class="meaning" id="meaningBox">
+        <h3>What this means</h3>
+        <p id="meaningText"></p>
+        <p class="next" id="nextText"></p>
+      </div>
+      <div class="share-card">
+        <p id="shareText"></p>
+        <p style="margin-top:10px;font-size:0.8rem;color:var(--muted)">Leadership = 100 − Gap. When your Suit and your Monk align, leadership rises and inner peace follows.</p>
+      </div>
+      <div class="book-links">
+        <a class="cta-book" href="https://www.amazon.com/Suited-Monk-Finding-Purpose-Happiness-ebook/dp/B00B3XFAG2/ref=sr_1_2?dib=eyJ2IjoiMSJ9.aeo80h-vtNKz1guTXBZlduA_-JHfrd6kIyQraOqym0yNXVXIsAtLfpWw6RB-x_qb-TL2QabDRE_YBp9RK_gA14g5d8MLQpXuc-F0AYeZQ8g.ZHsSdSIK-nw4XFFBPh6cjMhKTUJ_Pa573Ti2A9xkIzg&amp;dib_tag=se&amp;keywords=The+Suited+Monk&amp;qid=1791344311&amp;sr=8-2" target="_blank" rel="noopener">Get the book — The Suited Monk →</a>
+        <a class="cta-book lead" href="https://www.amazon.com/Suited-Monk-Leadership-Leading-Uncertain/dp/0957055374/ref=sr_1_3?dib=eyJ2IjoiMSJ9.aeo80h-vtNKz1guTXBZlduA_-JHfrd6kIyQraOqym0yNXVXIsAtLfpWw6RB-x_qb-TL2QabDRE_YBp9RK_gA14g5d8MLQpXuc-F0AYeZQ8g.ZHsSdSIK-nw4XFFBPh6cjMhKTUJ_Pa573Ti2A9xkIzg&amp;dib_tag=se&amp;keywords=The+Suited+Monk&amp;qid=1791344311&amp;sr=8-3" target="_blank" rel="noopener">Get the book — Suited Monk Leadership →</a>
+      </div>
+      <button class="again" id="again">Take again</button>
+      <button class="again" id="copyShare" style="border-color:var(--suit);color:var(--suit)">Copy share text</button>
+    </div>
+  </div>
+
+<script>
+/* Questions from suitedmonk.com/questionnaire. monkYes = true means YES shrinks the Gap (strengthens your Monk). */
+const questions = [
+  { q: "I work hard to create a good external 'personal brand' image (in work and personal life).", monkYes: false,
+    yesNote: "Your Suit is front and centre. Gap widens.", noNote: "Less brand armour — room for your Monk." },
+  { q: "If I take a step back and look at my life, I feel a sense of fulfilment.", monkYes: true,
+    yesNote: "Fulfilment sits in your Monk. Gap shrinks.", noNote: "Fulfilment missing — Gap grows." },
+  { q: "I frequently have feelings of being unhappy with who I am.", monkYes: false,
+    yesNote: "Unhappiness piles into the Gap.", noNote: "Self-acceptance strengthens your Monk." },
+  { q: "I accept challenges in life.", monkYes: true,
+    yesNote: "Your Monk meets challenge calmly. Gap shrinks.", noNote: "Resistance feeds the Gap." },
+  { q: "Think of a big change in your life. Did you struggle a lot to adapt to that change?", monkYes: false,
+    yesNote: "Struggle fills the Gap.", noNote: "You adapt with your Monk. Gap softens." },
+  { q: "I think it is quite normal to lose your temper with people if you don't like what they do.", monkYes: false,
+    yesNote: "Temper is Gap fuel.", noNote: "Composure — your Monk leads." },
+  { q: "I'm continuously working in alignment with my main purpose in life.", monkYes: true,
+    yesNote: "Purpose aligns your Suit with your Monk.", noNote: "Off-purpose — Gap widens." },
+  { q: "I have a sense of my inner voice.", monkYes: true,
+    yesNote: "Your Monk is audible. Gap shrinks.", noNote: "Inner voice quiet — your Suit may be louder." },
+  { q: "I go with the flow, rather than sticking to everything I have planned.", monkYes: true,
+    yesNote: "Flow eases the Gap.", noNote: "Rigid plans tighten your Suit's grip." },
+  { q: "I focus on the journey of my life, and my goals are only a background guide.", monkYes: true,
+    yesNote: "Journey focus feeds your Monk.", noNote: "Goal tunnel — Gap can grow." },
+  { q: "I welcome people's advice.", monkYes: true,
+    yesNote: "Openness shrinks the Gap.", noNote: "Your Suit closes off — Gap widens." },
+  { q: "When things don't go according to my will, I accept it.", monkYes: true,
+    yesNote: "Acceptance clears space for your Monk.", noNote: "Fighting reality stacks the Gap." },
+  { q: "I see things from other people's perspective.", monkYes: true,
+    yesNote: "Perspective softens the Gap.", noNote: "Narrow view — your Suit runs alone." },
+  { q: "I find it difficult to accept my mistakes and failures.", monkYes: false,
+    yesNote: "Shame and denial widen the Gap.", noNote: "You own mistakes — your Monk grows." },
+  { q: "I get so charged up emotionally that I am unable to consider different ways to deal with a problem.", monkYes: false,
+    yesNote: "Emotion floods the Gap.", noNote: "You stay clear — your Monk chooses." },
+  { q: "The demands of everyday life get me down.", monkYes: false,
+    yesNote: "Daily weight piles into the Gap.", noNote: "You carry demand with more peace." },
+  { q: "I have faith that the right people will come at the right time in my life.", monkYes: true,
+    yesNote: "Trust settles your Monk. Gap shrinks.", noNote: "Doubt keeps the Gap open." },
+  { q: "I struggle to live in the present moment and I worry about the future.", monkYes: false,
+    yesNote: "Worry widens the Gap.", noNote: "Present with your Monk. Gap softens." },
+  { q: "My career gives me purpose and meaning.", monkYes: true,
+    yesNote: "Career serves your Monk. Gap shrinks.", noNote: "Career without meaning — your Suit alone." },
+  { q: "I take ownership of my career rather than depend on my boss or peer/family pressure.", monkYes: true,
+    yesNote: "Ownership aligns your Suit with your Monk.", noNote: "Pressure from outside widens the Gap." }
+];
+
+let gap = 50;
+let i = 0;
+
+const gapNum = document.getElementById("gapNum");
+const crack = document.getElementById("crack");
+const crackLabel = document.getElementById("crackLabel");
+const feedback = document.getElementById("feedback");
+const suitIcon = document.getElementById("suitIcon");
+const monkIcon = document.getElementById("monkIcon");
+const pathFill = document.getElementById("pathFill");
+
+function clamp(n) { return Math.max(0, Math.min(100, n)); }
+
+function renderMeter(animate) {
+  gap = clamp(gap);
+  gapNum.textContent = Math.round(gap);
+  const ln = document.getElementById("leadNum");
+  if (ln) ln.textContent = Math.round(100 - gap);
+  crack.style.width = gap + "%";
+  const suitOp = 0.45 + (gap / 100) * 0.55;
+  const monkOp = 0.45 + ((100 - gap) / 100) * 0.55;
+  suitIcon.style.opacity = suitOp;
+  monkIcon.style.opacity = monkOp;
+  suitIcon.style.filter = gap > 60 ? "saturate(1.2)" : "saturate(0.85)";
+  monkIcon.style.filter = gap < 40 ? "brightness(1.25)" : "brightness(0.9)";
+  if (gap >= 70) crackLabel.textContent = "Gap wide — your Suit running the show";
+  else if (gap <= 30) crackLabel.textContent = "Gap small — closer to peace";
+  else crackLabel.textContent = "the Gap";
+  if (animate) {
+    crack.classList.remove("flash");
+    void crack.offsetWidth;
+    crack.classList.add("flash");
+  }
+}
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function showFeedback(note, delta) {
+  feedback.textContent = (delta > 0 ? "▲ " : delta < 0 ? "▼ " : "· ") + note;
+  feedback.style.color = delta > 0 ? "var(--gap)" : delta < 0 ? "var(--monk)" : "var(--muted)";
+  feedback.classList.add("show");
+  setTimeout(() => feedback.classList.remove("show"), 900);
+}
+
+function deltasFor(item) {
+  // YES: full direction; SOMETIMES: mild same way; NO: opposite
+  const dir = item.monkYes ? -1 : 1;
+  return {
+    yes: { delta: dir * 5, note: item.monkYes ? item.yesNote : item.yesNote },
+    sometimes: { delta: dir * 1, note: "Sometimes — the Gap barely moves." },
+    no: { delta: -dir * 4, note: item.monkYes ? item.noNote : item.noNote }
+  };
+}
+
+function renderQ() {
+  const item = questions[i];
+  document.getElementById("qMeta").textContent = "Question " + (i + 1) + " of " + questions.length;
+  document.getElementById("question").textContent = item.q;
+  pathFill.style.width = ((i / questions.length) * 100) + "%";
+  const d = deltasFor(item);
+  const box = document.getElementById("choices");
+  box.innerHTML = "";
+  [
+    ["Yes", d.yes],
+    ["Sometimes", d.sometimes],
+    ["No", d.no]
+  ].forEach(([label, opt]) => {
+    const btn = document.createElement("button");
+    btn.className = "choice" + (opt.delta > 0 ? " widen" : "");
+    btn.textContent = label;
+    btn.onclick = () => pick(opt);
+    box.appendChild(btn);
+  });
+}
+
+function pick(opt) {
+  gap += opt.delta;
+  renderMeter(true);
+  showFeedback(opt.note, opt.delta);
+  i++;
+  if (i >= questions.length) {
+    pathFill.style.width = "100%";
+    setTimeout(finish, 700);
+  } else {
+    setTimeout(renderQ, 650);
+  }
+}
+
+function leadScore() { return Math.round(100 - gap); }
+
+/* Bands use Leadership (100−Gap), same direction as the questionnaire reports:
+   higher = smaller Gap. Scaled to 100: <40 Big, 40–75 Mid, >75 Small. */
+function gapBand(ls) {
+  if (ls > 75) {
+    return {
+      key: "small",
+      label: "Small Gap",
+      report: "Balanced",
+      line: "Your Monk and your Suit are close. Leadership is strong — keep closing what’s left for deeper inner peace.",
+      meaning: "You’ve built real awareness of your Monk and how you wear your Suit in the world. You’re likely changing from the inside out, living closer to your values and purpose, with a growing sense of contentment. People who work through hard challenges often land here — healing shrinks the Gap.",
+      next: "Even a small Gap can stay open where old pain sits. Faith, surrender, and acceptance (as in The Suited Monk) help your Suit and your Monk fully integrate. Let your Monk keep leading career and life choices."
+    };
+  }
+  if (ls >= 40) {
+    return {
+      key: "mid",
+      label: "Mid Gap",
+      report: "Moderate Challenge",
+      line: "You’re waking up to both selves — your Suit outside and your Monk inside — but they’re not aligned enough yet.",
+      meaning: "You sense two forms of self, yet the picture isn’t clear enough to navigate smoothly. You want more fulfilment and may hear your Monk, then dismiss it when your Suit says it’s too risky or uncertain. Career moves often favour safety and security over purpose, which can leave you empty at the end of the day.",
+      next: "Tune into your Monk without judging yourself. Act on small intuitive steps, and make peace with past emotions — that shrinks the Gap and raises Leadership toward inner peace."
+    };
+  }
+  return {
+    key: "big",
+    label: "Big Gap",
+    report: "Gap Challenge",
+    line: "Your Suit is driving most of the journey. Your Monk needs more airtime before leadership can rise.",
+    meaning: "You’re not yet fully aware of both your Suit and your Monk, or how they work together. Life can feel steered by the outside world — risk, others’ expectations, money and status — while your Monk gets little space. Stress, burnout, emptiness after work, and counting down to the weekend are common signs of that misalignment.",
+    next: "Start by noticing both selves. Take time to nurture your Monk, then rebuild your Suit around what you actually value. Inner peace grows as the Gap closes."
+  };
+}
+
+function finish() {
+  show("end");
+  const ls = leadScore();
+  const g = Math.round(gap);
+  const b = gapBand(ls);
+  const pill = document.getElementById("bandPill");
+  pill.textContent = b.label + " · " + b.report;
+  pill.className = "band-pill " + b.key;
+  document.getElementById("endTitle").textContent = "Gap " + g + " · Leadership " + ls;
+  document.getElementById("endLine").textContent = b.line;
+  document.getElementById("meaningText").textContent = b.meaning;
+  document.getElementById("nextText").textContent = b.next;
+  const share = "Suited Monk: " + b.label + " (Gap " + g + ", Leadership " + ls + "). Your Suit × your Monk. #SuitedMonk #InnerPeace";
+  document.getElementById("shareText").textContent = share;
+  window._share = share;
+}
+
+function restart() {
+  i = 0; gap = 50; renderMeter(false); show("play"); renderQ();
+}
+
+document.getElementById("begin").onclick = restart;
+document.getElementById("again").onclick = restart;
+document.getElementById("copyShare").onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(window._share || "");
+    document.getElementById("copyShare").textContent = "Copied ✓";
+    setTimeout(() => document.getElementById("copyShare").textContent = "Copy share text", 1500);
+  } catch (e) {
+    prompt("Copy this:", window._share);
+  }
+};
+
+renderMeter(false);
+</script>
+</body>
+</html>
